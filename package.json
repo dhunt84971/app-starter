@@ -4,12 +4,30 @@
   "description": "Application that starts other applications.",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "postinstall": "electron-builder install-app-deps",
+    "start": "electron .",
+    "dist": "build"
   },
+  "postinstall": "electron-builder install-app-deps",
   "author": "dhuntlinux@gmail.com",
   "license": "MIT",
+  "build": {
+    "appId": "app-starter",
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Office",
+      "maintainer": "dhuntlinux@gmail.com"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
   "devDependencies": {
-    "electron": "^10.1.4"
+    "electron": "^10.1.4",
+    "electron-builder": "^20.44.4"
   },
   "dependencies": {
     "lib-app-settings": "^1.1.0",
