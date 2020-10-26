@@ -76,7 +76,7 @@ async function stopApps(){
         }
     }
     for (var i=apps.length-1; i>-1; i--){
-        stop(apps[i]);
+        stopApp(apps[i]);
         console.log("Waiting " + apps[i].startDelay + " seconds.");
         await new Promise((resolve, reject)=>{
             setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
@@ -91,7 +91,7 @@ function stopApp(app){
         app.state = "stopping";
         app.status = "STOPPING";
         updateAppStatus(app);
-        ps.kill(app.pid, "SIGKILL");
+        ps.kill(app.pid, "SIGTERM");
     }
 }
 
