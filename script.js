@@ -3,7 +3,7 @@
 const electron = require("electron");
 const { remote } = require("electron");
 const { dialog } = require("electron").remote;
-const { exec, spawn } = require('child_process');
+const { exec, spawn, execFile } = require('child_process');
 const ps = require('ps-node');
 //#endregion GLOBAL DECLARATIONS
 
@@ -14,7 +14,7 @@ var state = "starting";
 var checkAppStatus = true;
 const slowPoll = 60;
 var checkTime = 1;
-var checkFast = 10;
+var checkFast = 2;
 var fastPollActive = false;
 var appTemplate = {
     name: "name",
@@ -29,7 +29,7 @@ var appTemplate = {
 
 //#region BACKEND FUNCTIONS
 async function startApps(){
-    fastPollActive ? checkFast = 5 : checkAppsFast();
+    fastPollActive ? checkFast = 2 : checkAppsFast();
     for (var i=0; i<apps.length; i++){
         if (apps[i].enabled == "true"){
             apps[i].state = "starting";
@@ -49,16 +49,23 @@ async function startApps(){
 }
 
 function startApp(app){
-    fastPollActive ? checkFast = 5 : checkAppsFast();
+    fastPollActive ? checkFast = 2 : checkAppsFast();
     console.log("Starting " + app.name);
     app.state = "starting";
     app.status = "STARTING";
     updateAppStatus(app);
-    exec(app.path);
+    //let path = app.path.replace(/ /g, '\\ ');
+    let path = app.path.replace(/\//g, '\\\\');
+    console.log(path);
+    execFile(app.exeName, [] ,{'cwd': path }, (error) => {
+        if (error){
+            console.log(error);
+        }
+    });
 }
 
 async function stopApps(){
-    fastPollActive ? checkFast = 5 : checkAppsFast();
+    fastPollActive ? checkFast = 2 : checkAppsFast();
     for (var i=apps.length-1; i>-1; i--){
         if (apps[i].enabled == "true"){
             apps[i].state = "stopping";
@@ -88,7 +95,7 @@ function stopApp(app){
 
 async function checkAppsFast(){
     fastPollActive = true;
-    checkFast = 5;
+    checkFast = 2;
     while(checkFast > 0){
         checkFast > 0 ? checkFast-- : checkFast = 0;
         console.log("checkFast = " + checkFast);
@@ -178,7 +185,7 @@ function addApp(app){
     */
     var divList = document.getElementById("divAppList");
     var newItem = document.createElement("div");
-    newItem.classList.add("vboxFill");
+    newItem.classList.add("vbox");
     newItem.classList.add("noPadding");
     newItem.classList.add("noMargin");
     newItem.id = "div_" + app.name;
