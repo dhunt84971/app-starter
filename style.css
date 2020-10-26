@@ -12,7 +12,7 @@ body {
   align-items: center;
   background-color:var(--btnBoxTop_bgColor);
   color: var(--btnBoxTop_txColor);
-  border: 3px solid var(--btnBoxTop_bgColor);
+  border: 0px solid var(--btnBoxTop_bgColor);
   padding: 5px;
   text-align:center;
   font-weight: bold;
@@ -34,8 +34,8 @@ body {
 }
 
 .btn:hover {
-  background-color: var(--btnBoxItem_bgColor);
   cursor: pointer; 
+  border: 3px solid white;
 }
 
 .btnApp {
@@ -63,10 +63,7 @@ body {
   display:flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  background-color:var(--btnBoxTop_bgColor);
-  color: var(--btnBoxTop_txColor);
-  border: 3px solid var(--btnBoxTop_bgColor);
+  background-color:var(--btnBoxItem_bgColor);
   padding: 5px;
   text-align:center;
   font-weight: bold;
@@ -77,12 +74,13 @@ body {
   height: 30px;
   margin: 2px;
   min-width: 100px;
-  max-width: 100px;
+  max-width: 100%;
+  color: white;
 }
 
 .lblName {
-  min-width: 100px;
-  max-width: 100px;
+  width: 100% !important;
+  text-align: left;
 }
 
 .actionHdr {
@@ -92,7 +90,7 @@ body {
 
 .header {
   color: cyan !important;
-  background-color: darkblue !important; 
+  background-color: var(--btnBoxTop_bgColor) !important; 
   border: 0px;
 }
 
@@ -119,20 +117,52 @@ body {
     background-color: red;
 }
 
+.green {
+  background-color: green;
+}
+
 .cyan {
-    background-color: cyan;
+    background-color: cyan !important;
 }
 
 .orange {
-    background-color: orange;
+    background-color: orange !important;
 }
 
 .gray {
-    background-color: gray;
+    background-color: gray !important;
 }
 
 .white {
-    background-color: white;
+    background-color: white !important;
 }
 
 /*#endregion TEST COLORS */
+
+
+#btnStartAll {
+  min-width: 100px;
+  background-color: green;
+}
+
+#btnStopAll {
+  min-width: 100px;
+  background-color: red;
+}
+
+#btnAddApp {
+  min-width: 150px;
+}
+
+.running {
+  background-color: green;
+}
+
+.stopped {
+  background-color: red;
+}
+
+.transition{
+  background-color: yellow;
+  color: black;
+}

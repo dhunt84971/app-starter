@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>App Starter</title>
+  <title>Application Starter</title>
   <link rel="stylesheet" href="layout_style.css">
   <link rel="stylesheet" href="style.css">
 
@@ -11,22 +11,24 @@
 
 <body>
   <div class="container">
-    <div class="vboxFill overflowAuto appWindow">
+    <div class="vboxFill overflowHidden appWindow">
       
       <div class="hbox noPadding noMargin">
         <div class="label lblName header">NAME</div>
         <div class="label actionHdr header">ACTIONS</div>
         <div class="label header">STATUS</div>
       </div>
-      <!-- <div class="vertDivider"></div>
-      <div class="hbox noPadding noMargin">
-        <div class="label lblName">mousepad</div>
-        <div class="btn btnAction">START</div>
-        <div class="btn btnAction">STOP</div>
-        <div class="label">RUNNING</div>
-      </div> -->
-
-      <div class="vboxFill appWindow"></div>
+      <div class="vboxFill noPadding noMargin overflowAuto" id="divAppList">
+        <!-- app items go here -->
+      </div>
+      <div class="vertDivider gray"></div>
+      <div class="hbox">
+        <div class="btn hide" id="btnAddApp">+ ADD APPLICATION</div>
+        <div class="hboxFill"></div>
+        <div class="btn" id="btnStartAll">START ALL</div>
+        <div class="btn" id="btnStopAll">STOP ALL</div>
+      </div>
+      
     </div>
   </div>
   <script src="script.js"></script>

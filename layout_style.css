@@ -2,7 +2,7 @@
 :root {
     --btnBoxTop_bgColor: #5a5a5a;
     --btnBoxTop_txColor: white;
-    --btnBoxItem_bgColor: #a0a0a0;
+    --btnBoxItem_bgColor: #333;
     --btnBoxItem_txColor: black;
     --logo_bgColor: #a2a2a2;
     --app_bgColor: #1d1d1d;
@@ -161,6 +161,10 @@ body {
 
 .stackVert {
     padding-top: 0px !important;
+}
+
+.hide {
+    display: none !important;
 }
 
 .overflowAuto {

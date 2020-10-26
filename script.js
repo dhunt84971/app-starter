@@ -12,7 +12,10 @@ const ps = require('ps-node');
 var apps ={};
 var state = "starting";
 var checkAppStatus = true;
-var checkTime = 10;
+const slowPoll = 60;
+var checkTime = 1;
+var checkFast = 10;
+var fastPollActive = false;
 var appTemplate = {
     name: "name",
     path: "path",
@@ -26,9 +29,12 @@ var appTemplate = {
 
 //#region BACKEND FUNCTIONS
 async function startApps(){
+    fastPollActive ? checkFast = 5 : checkAppsFast();
     for (var i=0; i<apps.length; i++){
-        if (apps[i].enabled){
+        if (apps[i].enabled == "true"){
             apps[i].state = "starting";
+            apps[i].status = "STARTING";
+            updateAppStatus(apps[i]);
         }
     }
     for (var i=0; i<apps.length; i++){
@@ -38,45 +44,103 @@ async function startApps(){
         await new Promise((resolve, reject)=>{
             setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
         });
-        console.log("Starting " + apps[i].name);
-        if (apps[i].enabled){
-            exec(apps[i].path);
-        }
+        if (apps[i].enabled == "true") startApp(apps[i]);
     }
 }
 
-async function checkApps(){
-    console.log(apps);
+function startApp(app){
+    fastPollActive ? checkFast = 5 : checkAppsFast();
+    console.log("Starting " + app.name);
+    app.state = "starting";
+    app.status = "STARTING";
+    updateAppStatus(app);
+    exec(app.path);
+}
+
+async function stopApps(){
+    fastPollActive ? checkFast = 5 : checkAppsFast();
+    for (var i=apps.length-1; i>-1; i--){
+        if (apps[i].enabled == "true"){
+            apps[i].state = "stopping";
+            apps[i].status = "STOPPING";
+            updateAppStatus(apps[i]);
+        }
+    }
+    for (var i=apps.length-1; i>-1; i--){
+        stop(apps[i]);
+        console.log("Waiting " + apps[i].startDelay + " seconds.");
+        await new Promise((resolve, reject)=>{
+            setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
+        });
+    }
+}
+
+function stopApp(app){
+    fastPollActive ? checkFast = 5 : checkAppsFast();
+    console.log("Stopping " + app.name);
+    if (app.pid){
+        app.state = "stopping";
+        app.status = "STOPPING";
+        updateAppStatus(app);
+        ps.kill(app.pid, "SIGKILL");
+    }
+}
+
+async function checkAppsFast(){
+    fastPollActive = true;
+    checkFast = 5;
+    while(checkFast > 0){
+        checkFast > 0 ? checkFast-- : checkFast = 0;
+        console.log("checkFast = " + checkFast);
+        for (var i=0; i<apps.length; i++){
+            checkIsRunning(apps[i], (app)=>{
+                app.status = app.running ? "RUNNING" : "STOPPED";
+                updateAppStatus(app);
+                console.log("App " + app.exeName + " is " + app.status);
+                if (app.running && app.state == "starting"){
+                    app.state = "monitoring";
+                    console.log("Monitoring " + app.name);
+                }
+            });
+        }
+        await new Promise((resolve, reject)=>{
+            setTimeout(()=>{resolve();}, 1000);
+        });
+    }
+    fastPollActive = false;
+}
+
+async function checkAppsSlow(){
     while(checkAppStatus){
         await new Promise((resolve, reject)=>{
-            setTimeout(()=>{resolve();}, checkTime * 1000);
+            setTimeout(()=>{resolve();}, slowPoll * 1000);
         });
         for (var i=0; i<apps.length; i++){
-            if (apps[i].enabled){
-                checkIsRunning(apps[i], (app)=>{
-                    let status = app.running ? " is running." : " is stopped.";
-                    console.log("App " + app.name + status);
-                    if (!app.running && app.restart && app.state == "monitoring"){
-                        app.state = "starting";
-                        console.log("Starting " + app.name);
-                        exec(app.path);
-                    }
-                    if (app.running && app.state == "starting"){
-                        app.state = "monitoring";
-                        console.log("Monitoring " + app.name);
-                    }
-                });
-            }
+            checkIsRunning(apps[i], (app)=>{
+                app.status = app.running ? "RUNNING" : "STOPPED";
+                updateAppStatus(app);
+                console.log("App " + app.exeName + " is " + app.status);
+                if (!app.running && app.restart == "true" && app.state == "monitoring"){
+                    console.log("Starting " + app.name);
+                    startApp(app);
+                }
+                if (app.running && app.state == "starting"){
+                    app.state = "monitoring";
+                    console.log("Monitoring " + app.name);
+                }
+            });
         }
+        
     }
 }
 
 function checkIsRunning(app, callback){
-    ps.lookup({command: app.name}, (err, resultList)=>{
+    ps.lookup({command: app.exeName}, (err, resultList)=>{
         if (err) {
             throw new Error( err );
         }
         app.running = resultList.length>0;
+        if (app.running) app.pid = resultList[0].pid;
         if (callback){
             callback(app);
         }
@@ -86,7 +150,7 @@ function checkIsRunning(app, callback){
 
 function getAppByName(name){
     for (var i=0; i<apps.length;i++){
-        if (apps[i].name) return apps[i];
+        if (apps[i].name == name) return apps[i];
     }
     return;
 }
@@ -94,19 +158,57 @@ function getAppByName(name){
 
 
 //#region PAGE RENDER FUNCTIONS
+function addApps(){
+    for (var i=0; i<apps.length; i++){
+        addApp(apps[i]);
+    }
+}
+
 function addApp(app){
+    /* HTML for Reference
+    <div class="vbox noPadding noMargin">
+    <div class="vertDivider"></div>
+        <div class="hbox noPadding noMargin">
+        <div class="label lblName">mousepad</div>
+        <div class="btn btnAction">START</div>
+        <div class="btn btnAction">STOP</div>
+        <div class="label">RUNNING</div>
+    </div> 
+    </div>
+    */
+    var divList = document.getElementById("divAppList");
+    var newItem = document.createElement("div");
+    newItem.classList.add("vboxFill");
+    newItem.classList.add("noPadding");
+    newItem.classList.add("noMargin");
+    newItem.id = "div_" + app.name;
+    var inner = "";
+    inner += "<div class='vertDivider'></div>";
+    inner += "<div class='hbox noPadding noMargin'>";
+    inner += "<div id='lbl_" + app.name + "' class='label lblName' ";
+    inner += "title='" + app.description + "'>" + app.name + "</div>";
+    inner += "<div id='btnStart_"+ app.name +"' class='btn btnAction green' onclick='btnStart_click(this);'>START</div>";
+    inner += "<div id='btnStop_"+ app.name +"' class='btn btnAction red' onclick='btnStop_click(this);'>STOP</div>";
+    inner += "<div id='lblStatus_"+ app.name +"' class='label'>PENDING</div>";
+    inner += "</div>";
+    newItem.innerHTML = inner;
+    divList.appendChild(newItem);  
+}
 
-/*
-<div class="vertDivider"></div>
-<div class="hbox noPadding noMargin">
-  <div class="label lblName">mousepad</div>
-  <div class="btn btnAction">START</div>
-  <div class="btn btnAction">STOP</div>
-  <div class="label">RUNNING</div>
-</div> 
-*/
+function updateAppStatus(app){
+    let lblStatus = document.getElementById("lblStatus_" + app.name);
+    lblStatus.innerHTML = app.status;
+    app.status == "RUNNING" ? 
+        lblStatus.classList.add("running") : 
+        lblStatus.classList.remove("running");
+    app.status == "STOPPING" || app.status == "STARTING" ?
+        lblStatus.classList.add("transition") : 
+        lblStatus.classList.remove("transition");
+    app.status == "STOPPED" ?
+        lblStatus.classList.add("stopped") : 
+        lblStatus.classList.remove("stopped");
+    
 
-      
 }
 //#endregion PAGE RENDER FUNCTIONS
 
@@ -119,7 +221,8 @@ async function init(){
     .then((settings)=>{
         if (settings){
             apps = settings.apps;
-            checkApps();
+            addApps();
+            checkAppsSlow();
             startApps();
         }
     })
@@ -132,5 +235,24 @@ init();
 //#endregion INITIALIZATION
 
 
+//#region EVENT HANDLERS
+document.getElementById("btnStartAll").addEventListener("click", ()=>{
+    startApps();
+});
 
+document.getElementById("btnStopAll").addEventListener("click", ()=>{
+    stopApps();
+});
+
+function btnStart_click(el){
+    let app = getAppByName(el.id.split("_")[1]);
+    startApp(app);
+}
+
+function btnStop_click(el){
+    let app = getAppByName(el.id.split("_")[1]);
+    stopApp(app);
+}
+
+//#endregion EVENT HANDLERS
 
