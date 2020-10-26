@@ -1,0 +1,177 @@
+/*#region STANDARD COLORS */
+:root {
+    --btnBoxTop_bgColor: #5a5a5a;
+    --btnBoxTop_txColor: white;
+    --btnBoxItem_bgColor: #a0a0a0;
+    --btnBoxItem_txColor: black;
+    --logo_bgColor: #a2a2a2;
+    --app_bgColor: #1d1d1d;
+    --btnSelected_bgColor: #08a9c5;
+    --btnSelected_borderColor: #f4bc43;
+}
+/*#endregion STANDARD COLORS */
+
+/*#region DESKTOP APP BEHAVIORS */
+:not(input):not(textarea),
+:not(input):not(textarea)::after,
+:not(input):not(textarea)::before {
+    -webkit-user-select: none;
+    user-select: none;
+    /*  cursor: default; */
+}
+/*#region DESKTOP APP BEHAVIORS */
+
+/*#region INITIAL STYLES */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing : border-box;
+  font: 13px "Roboto", Helvetica, Arial, san-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+/*#region INITIAL STYLES */
+
+/*#region LAYOUT STYLES */
+.container {
+    height: 100%;
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.boxFillHor {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 auto;
+    padding: 5px;
+    min-width: 0%;
+    width: 100%;
+    min-height: 0%;
+    height: 100%;
+}
+
+.boxFillVer {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 5px;
+    min-width: 0%;
+    width: 100%;
+    min-height: 0%;
+    height: 100%;
+}
+
+.hbox {
+    display: flex;
+    flex-direction: row;
+    flex: 0 0 auto;
+    padding: 5px;
+}
+
+.hboxFill {
+    display: flex;
+    flex-direction: row;
+    flex: 1 1 auto;
+    padding: 5px;
+    height: 100%;
+    width: 100%;
+    min-width: 0%;
+}
+
+.vbox {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    padding: 5px;
+}
+
+.vboxFill {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    padding: 5px;
+    height: 100%;
+    min-height: 0%;
+}
+
+.noMargin {
+    margin: 0 !important;
+}
+
+.noPadding {
+    padding: 0 !important;
+}
+
+.horizDivider {
+    padding: 0;
+    min-width: 5px;
+}
+
+.vertDivider {
+    padding: 0;
+    min-height: 5px;
+}
+
+.indentPadding{
+    padding-left: 5px;
+}
+
+.leftMargin {
+  margin-left: 5px;
+}
+
+.left2xMargin {
+  margin-left: 10px;
+}
+
+.left3xMargin {
+  margin-left: 15px;
+}
+
+.indent {
+  margin-left: 30px;  
+}
+
+.horDivider {
+    display: flex;
+    height:2px;
+    background: #999;
+    margin: 0px;
+}
+
+.flushRight{
+    margin-right: 0px !important;
+}
+
+.flushLeft{
+    margin-left: 0px !important;
+}
+
+.flushTop{
+    margin-top: 0px !important;
+}
+
+.flushBottom{
+    margin-bottom: 0px !important;
+}
+
+.stackVert {
+    padding-top: 0px !important;
+}
+
+.overflowAuto {
+    overflow: auto;
+}
+
+.overflowHidden {
+    overflow: hidden;
+}
+
+.overflowScrollY {
+    overflow-y: scroll;
+}
+/*#endregion LAYOUT STYLES */

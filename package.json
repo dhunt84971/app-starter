@@ -1,0 +1,18 @@
+{
+  "name": "app-starter",
+  "version": "0.0.1",
+  "description": "Application that starts other applications.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "dhuntlinux@gmail.com",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^10.1.4"
+  },
+  "dependencies": {
+    "lib-app-settings": "^1.1.0",
+    "ps-node": "^0.1.6"
+  }
+}
