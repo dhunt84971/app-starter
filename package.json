@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "lib-app-settings": "^1.1.0",
-    "ps-node": "^0.1.6"
+    "ps-node": "^0.1.6",
+    "tasklist": "^4.0.1"
   }
 }
