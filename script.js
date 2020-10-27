@@ -59,7 +59,7 @@ function startApp(app){
     app.status = "STARTING";
     updateAppStatus(app);
     //let path = app.path.replace(/ /g, '\\ ');
-    let path = app.path.replace(/\//g, '\\\\');
+    let path = (os.platform == "win32")? app.path.replace(/\//g, '\\\\'): app.path;
     console.log(path);
     execFile(app.exeName, [] ,{'cwd': path }, (error) => {
         if (error){
@@ -248,8 +248,15 @@ function addApp(app){
     inner += "<div class='hbox noPadding noMargin'>";
     inner += "<div id='lbl_" + app.name + "' class='label lblName' ";
     inner += "title='" + app.description + "'>" + app.name + "</div>";
-    inner += "<div id='btnStart_"+ app.name +"' class='btn btnAction green' onclick='btnStart_click(this);'>START</div>";
-    inner += "<div id='btnStop_"+ app.name +"' class='btn btnAction red' onclick='btnStop_click(this);'>STOP</div>";
+    inner += "<div id='btnStart_"+ app.name +"' class='btn btnAction' onclick='btnStart_click(this);'"
+    inner += "title='Start "+ app.name +"'>";
+    inner += "<img src='images/start.png' width=20px /></div>";
+    inner += "<div id='btnStop_"+ app.name +"' class='btn btnAction' onclick='btnStop_click(this);'"
+    inner += "title='Stop "+ app.name +"'>";
+    inner += "<img src='images/stop.png' width=20px /></div>";
+    inner += "<div id='btnEdit_"+ app.name +"' class='btn btnAction' onclick='btnEdit_click(this);'"
+    inner += "title='Edit "+ app.name +"'>";
+    inner += "<img src='images/edit.png' width=20px /></div>";
     inner += "<div id='lblStatus_"+ app.name +"' class='label'>PENDING</div>";
     inner += "</div>";
     newItem.innerHTML = inner;
@@ -313,6 +320,10 @@ function btnStart_click(el){
 function btnStop_click(el){
     let app = getAppByName(el.id.split("_")[1]);
     stopApp(app);
+}
+
+function btnEdit_click(el){
+
 }
 
 //#endregion EVENT HANDLERS

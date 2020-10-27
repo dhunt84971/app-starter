@@ -25,8 +25,8 @@ body {
 }
 
 .btnAction {
-  min-width: 100px;
-  max-width: 100px;
+  min-width: 30px;
+  max-width: 30px;
 }
 
 .btnRight {
@@ -84,8 +84,8 @@ body {
 }
 
 .actionHdr {
-  min-width: 204px;
-  max-width: 204px;
+  min-width: 98px;
+  max-width: 98px;
 }
 
 .header {
@@ -141,13 +141,11 @@ body {
 
 
 #btnStartAll {
-  min-width: 100px;
-  background-color: green;
+  min-width: 80px;
 }
 
 #btnStopAll {
-  min-width: 100px;
-  background-color: red;
+  min-width: 80px;
 }
 
 #btnAddApp {
