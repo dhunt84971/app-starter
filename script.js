@@ -5,8 +5,10 @@ const { remote } = require("electron");
 const { dialog } = require("electron").remote;
 const { exec, spawn, execFile } = require('child_process');
 const ps = require('ps-node');
-const tasklist = require('tasklist');
 const os = require('os');
+// Use tasklist instead of ps-node if this is a Windows computer.
+var tasklist = ()=>{return;};
+if (os.platform=="win32") tasklist = require('tasklist');
 //#endregion GLOBAL DECLARATIONS
 
 
@@ -101,7 +103,7 @@ async function checkAppsFast(){
     while(checkFast > 0){
         checkFast > 0 ? checkFast-- : checkFast = 0;
         console.log("checkFast = " + checkFast);
-        if (!os.platform() == "win32"){
+        if (os.platform() != "win32"){
             for (var i=0; i<apps.length; i++){
                 checkIsRunning(apps[i], (app)=>{
                     app.status = app.running ? "RUNNING" : "STOPPED";
@@ -140,7 +142,7 @@ async function checkAppsSlow(){
         await new Promise((resolve, reject)=>{
             setTimeout(()=>{resolve();}, slowPoll * 1000);
         });
-        if (!os.platform() == "win32"){
+        if (os.platform() != "win32"){
             for (var i=0; i<apps.length; i++){
                 checkIsRunning(apps[i], (app)=>{
                     app.status = app.running ? "RUNNING" : "STOPPED";
