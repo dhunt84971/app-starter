@@ -84,8 +84,8 @@ body {
 }
 
 .actionHdr {
-  min-width: 98px;
-  max-width: 98px;
+  min-width: 166px;
+  max-width: 166px;
 }
 
 .header {
@@ -168,4 +168,8 @@ body {
 .td_space {
   padding: 5px;
   margin: 0px;
+}
+
+.disabled {
+  color: darkgray;
 }
