@@ -4,6 +4,7 @@ const electron = require("electron");
 const {remote} = require("electron");
 const ps = require('ps-node');
 const os = require('os');
+const { exec, spawn, execFile } = require('child_process');
 // Use tasklist instead of ps-node if this is a Windows computer.
 var tasklist = ()=>{return;};
 if (os.platform=="win32") tasklist = require('tasklist');
@@ -13,7 +14,7 @@ if (os.platform=="win32") tasklist = require('tasklist');
 var apps ={};
 var state = "STARTING";
 var checkAppStatus = true;
-const slowPoll = 60;
+const slowPoll = 5;
 const checkFastTime = 5;
 var checkFast = checkFastTime;
 var fastPollActive = false;
@@ -58,7 +59,74 @@ function updateAppStatus(app){
             app.status = "STOPPED";
         }
     }
-    //updateAppLabelStatus(app);
+    electron.ipcRenderer.send("updateAppStatus", app);
+}
+
+async function startApps(){
+    console.log("Starting apps...");
+    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
+    for (var i=0; i<apps.length; i++){
+        if (apps[i].enabled == "true"){
+            apps[i].state = "STARTING";
+            updateAppStatus(apps[i]);
+        }
+    }
+    for (var i=0; i<apps.length; i++){
+        console.log("Waiting " + apps[i].startDelay + 
+            " seconds to start " + apps[i].name 
+        );
+        await new Promise((resolve, reject)=>{
+            setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
+        });
+        if (apps[i].enabled == "true") startApp(apps[i]);
+    }
+}
+
+function startApp(appName){
+    let app = getAppByName(appName);
+    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
+    console.log("Starting " + app.name);
+    app.state = "STARTING";
+    app.status = "STARTING";
+    updateAppStatus(app);
+    //let path = app.path.replace(/ /g, '\\ ');
+    let path = (os.platform == "win32")? app.path.replace(/\//g, '\\\\'): app.path;
+    console.log(path);
+    execFile(app.exeName, [] ,{'cwd': path }, (error) => {
+        if (error){
+            console.log(error);
+        }
+    });
+}
+
+async function stopApps(){
+    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
+    for (var i=apps.length-1; i>-1; i--){
+        if (apps[i].enabled == "true"){
+            apps[i].state = "STOPPING";
+            apps[i].status = "STOPPING";
+            updateAppStatus(apps[i]);
+        }
+    }
+    for (var i=apps.length-1; i>-1; i--){
+        stopApp(apps[i]);
+        console.log("Waiting " + apps[i].startDelay + " seconds.");
+        await new Promise((resolve, reject)=>{
+            setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
+        });
+    }
+}
+
+function stopApp(appName){
+    let app = getAppByName(appName);
+    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
+    console.log("Stopping " + app.name);
+    if (app.pid){
+        app.state = "STOPPING";
+        app.status = "STOPPING";
+        updateAppStatus(app);
+        ps.kill(app.pid, "SIGTERM");
+    }
 }
 
 function checkWinIsRunning(app, tasks, callback){
@@ -139,13 +207,29 @@ function getAppByName(name){
 electron.ipcRenderer.on('apps', (event, message) => {
     apps = message;
     console.log(apps);
+    console.log("Starting slow poll.");
     checkAppsSlow();
 });
 
 electron.ipcRenderer.on('stopApp', (event, message) => {
-    app = message;
+    let app=message;
     console.log(app);
-    checkAppsSlow();
+    stopApp(app);
+});
+
+electron.ipcRenderer.on('startApp', (event, message) => {
+    let app=message;
+    console.log(app);
+    startApp(app);
+});
+
+
+electron.ipcRenderer.on('stopApps', (event, message) => {
+    stopApps();
+});
+
+electron.ipcRenderer.on('startApps', (event, message) => {
+    startApps();
 });
 
 //#endregion INITIALIZATION

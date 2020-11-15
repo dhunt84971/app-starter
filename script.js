@@ -3,12 +3,15 @@
 const electron = require("electron");
 const { remote } = require("electron");
 const { dialog } = require("electron").remote;
+const ipc = require("electron").ipcRenderer;
 const { exec, spawn, execFile } = require('child_process');
 const ps = require('ps-node');
 const os = require('os');
 // Use tasklist instead of ps-node if this is a Windows computer.
 var tasklist = ()=>{return;};
 if (os.platform=="win32") tasklist = require('tasklist');
+
+var workerWin_getStatus;
 //#endregion GLOBAL DECLARATIONS
 
 //#region GLOBAL VARIABLES
@@ -31,166 +34,23 @@ var appTemplate = {
 
 //#region BACKEND FUNCTIONS
 function updateAppStatus(app){
-    if (app.running){
-        if (app.state == "STOPPED"){
-            app.state = "MONITORING";
-            app.status = "RUNNING";
-        }
-        else if (app.state == "STOPPING"){
-            app.status = "STOPPING";
-        }
-        else if (app.state == "STARTING"){
-            app.state = "MONITORING";
-            app.status = "RUNNING";
-        }
-        else {
-            app.state = "RUNNING";
-            app.status = "RUNNING";
-        }
-    }
-    else { //!app.running
-        if (app.state == "STARTING"){
-            app.status = "STARTING";
-        }
-        else if (app.state == "MONITORING" && app.restart == "true"){
-            startApp(app);
-        }
-        else {
-            app.state = "STOPPED";
-            app.status = "STOPPED";
-        }
-    }
     updateAppLabelStatus(app);
 }
 
-async function startApps(){
-    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
-    for (var i=0; i<apps.length; i++){
-        if (apps[i].enabled == "true"){
-            apps[i].state = "STARTING";
-            updateAppStatus(apps[i]);
-        }
-    }
-    for (var i=0; i<apps.length; i++){
-        console.log("Waiting " + apps[i].startDelay + 
-            " seconds to start " + apps[i].name 
-        );
-        await new Promise((resolve, reject)=>{
-            setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
-        });
-        if (apps[i].enabled == "true") startApp(apps[i]);
-    }
+function startApps(){
+    workerWin_getStatus.webContents.send("startApps", null);
 }
 
 function startApp(app){
-    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
-    console.log("Starting " + app.name);
-    app.state = "STARTING";
-    app.status = "STARTING";
-    updateAppStatus(app);
-    //let path = app.path.replace(/ /g, '\\ ');
-    let path = (os.platform == "win32")? app.path.replace(/\//g, '\\\\'): app.path;
-    console.log(path);
-    execFile(app.exeName, [] ,{'cwd': path }, (error) => {
-        if (error){
-            console.log(error);
-        }
-    });
+    workerWin_getStatus.webContents.send("startApp", app.name);
 }
 
-async function stopApps(){
-    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
-    for (var i=apps.length-1; i>-1; i--){
-        if (apps[i].enabled == "true"){
-            apps[i].state = "STOPPING";
-            apps[i].status = "STOPPING";
-            updateAppStatus(apps[i]);
-        }
-    }
-    for (var i=apps.length-1; i>-1; i--){
-        stopApp(apps[i]);
-        console.log("Waiting " + apps[i].startDelay + " seconds.");
-        await new Promise((resolve, reject)=>{
-            setTimeout(()=>{resolve();}, apps[i].startDelay * 1000);
-        });
-    }
+function stopApps(){
+    workerWin_getStatus.webContents.send("stopApps", null);
 }
 
 function stopApp(app){
-    fastPollActive ? checkFast = checkFastTime : checkAppsFast();
-    console.log("Stopping " + app.name);
-    if (app.pid){
-        app.state = "STOPPING";
-        app.status = "STOPPING";
-        updateAppStatus(app);
-        ps.kill(app.pid, "SIGTERM");
-    }
-}
-
-function checkWinIsRunning(app, tasks, callback){
-    var task = tasks.find(x => x.imageName == app.exeName);
-    if (task){
-        app.running = true;
-        app.pid = task.pid;
-    }
-    else{
-        app.running = false;
-    }
-    if (callback){
-        callback(app);
-    }
-    return app.running;
-}
-
-async function checkUxIsRunning(app, callback){
-    ps.lookup({command: app.exeName}, (err, resultList)=>{
-        if (err) {
-            throw new Error( err );
-        }
-        app.running = resultList.length>0;
-        if (app.running) app.pid = resultList[0].pid;
-        if (callback){
-            callback(app);
-        }
-        return app.running;
-    });
-}
-
-async function checkIsRunning(){
-    if (os.platform() != "win32"){
-        for (var i=0; i<apps.length; i++){
-            checkUxIsRunning(apps[i], (app)=>{updateAppStatus(app);});
-        }
-    }
-    else {
-        var tasks = await tasklist();
-        for (var i=0; i<apps.length; i++){
-            checkWinIsRunning(apps[i], tasks, (app)=>{updateAppStatus(app);});
-        }
-    }
-}
-
-async function checkAppsFast(){
-    fastPollActive = true;
-    checkFast = checkFastTime;
-    while(checkFast > 0){
-        checkFast > 0 ? checkFast-- : checkFast = 0;
-        console.log("checkFast = " + checkFast);
-        checkIsRunning();
-        await new Promise((resolve, reject)=>{
-            setTimeout(()=>{resolve();}, 1000);
-        });
-    }
-    fastPollActive = false;
-}
-
-async function checkAppsSlow(){
-    while(checkAppStatus){
-        await new Promise((resolve, reject)=>{
-            setTimeout(()=>{resolve();}, slowPoll * 1000);
-        });
-        checkIsRunning();
-    }
+    workerWin_getStatus.webContents.send("stopApp", app.name);
 }
 
 function getAppByName(name){
@@ -200,8 +60,8 @@ function getAppByName(name){
     return;
 }
 
-function startWorker_getStatus(){
-    var workerWindow = new BrowserWindow({
+function startWorker_getStatus(callback){
+    workerWin_getStatus = new remote.BrowserWindow({
         parent: remote.getCurrentWindow(),
         show: false,
         webPreferences: { 
@@ -209,10 +69,11 @@ function startWorker_getStatus(){
             enableRemoteModule: true
         }
     }); 
-    workerWindow.loadFile('worker_getStatus.html');
-    win.webContents.openDevTools();
-    win.webContents.on('did-finish-load', () => {
-        win.webContents.send("apps", apps);
+    workerWin_getStatus.loadFile('worker_getStatus.html');
+    workerWin_getStatus.webContents.openDevTools();
+    workerWin_getStatus.webContents.on('did-finish-load', () => {
+        workerWin_getStatus.webContents.send("apps", apps);
+        callback();
     });
 
 }
@@ -296,9 +157,9 @@ async function init(){
         if (settings){
             apps = settings.apps;
             addApps();
-            //checkAppsSlow();
-
-            startApps();
+            startWorker_getStatus(()=>{
+                startApps();    
+            });
         }
     })
     .catch((error)=>{
@@ -308,6 +169,15 @@ async function init(){
 
 init();
 //#endregion INITIALIZATION
+
+//#region IPC EVENT HANLDERS
+ipc.on("updateAppStatus", (event, message) => {
+    let app = message;
+    console.log(app);
+    updateAppStatus(app);
+});
+
+//#endregion IPC EVENT HANDLERS
 
 //#region EVENT HANDLERS
 document.getElementById("btnStartAll").addEventListener("click", ()=>{

@@ -1,4 +1,5 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
+const ipc = require("electron").ipcRenderer;
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -38,6 +39,10 @@ function createWindow() {
 //#region IPC EVENTS
 ipcMain.on("settingsUpdated", (event, message) => { 
   win.webContents.send("settingsUpdated", message);
+});
+
+ipcMain.on("updateAppStatus", (event, message) => { 
+  win.webContents.send("updateAppStatus", message);
 });
 
 //#endregion IPC EVENTS
