@@ -199,6 +199,23 @@ function getAppByName(name){
     }
     return;
 }
+
+function startWorker_getStatus(){
+    var workerWindow = new BrowserWindow({
+        parent: remote.getCurrentWindow(),
+        show: false,
+        webPreferences: { 
+            nodeIntegration: true,
+            enableRemoteModule: true
+        }
+    }); 
+    workerWindow.loadFile('worker_getStatus.html');
+    win.webContents.openDevTools();
+    win.webContents.on('did-finish-load', () => {
+        win.webContents.send("apps", apps);
+    });
+
+}
 //#endregion BACKEND FUNCTIONS
 
 //#region PAGE RENDER FUNCTIONS
@@ -279,7 +296,8 @@ async function init(){
         if (settings){
             apps = settings.apps;
             addApps();
-            checkAppsSlow();
+            //checkAppsSlow();
+
             startApps();
         }
     })
